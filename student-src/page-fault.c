@@ -42,7 +42,12 @@ pfn_t pagefault_handler(vpn_t request_vpn, int write) {
    * 2) Invalidate the page's entry in the victim's page table.
    * 3) Clear the victim page's TLB entry (hint: tlb_clearone()).
    */
-
+  current_pagetable = victim_pcb->pagetable;
+  if (current_pagetable[victim_vpn].dirty) {
+      page_to_disk(victim_pfn, victim_vpn, victim_pcb->pid);
+  }
+  current_pagetable[victim_pfn].valid = 0;
+  tlb_clearone(victim_vpn);
   printf("****PAGE FAULT has occurred at VPN %u. Evicting (PFN %u VPN %u) as victim.\n", request_vpn,
       victim_pfn, victim_vpn);
 

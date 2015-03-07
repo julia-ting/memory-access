@@ -18,9 +18,13 @@ double compute_emat() {
     * Any other values you might need are composites of the above values.  Some
     * of these computations have been done for you, in case you need them.
     */
+   long int total_accesses = count_writes + count_reads;
+   long int tlb_misses = total_accesses - count_tlbhits;
+   long int tlb_hit_time = count_tlbhits * MEMORY_ACCESS_TIME;
+   long int tlb_miss_time = tlb_misses * 2 * MEMORY_ACCESS_TIME;
+   long int page_fault_time = count_pagefaults * DISK_ACCESS_TIME;
+   long int total_time = tlb_hit_time + tlb_miss_time + page_fault_time;
+   long int result = total_time / total_accesses;
 
-   /* long int total_accesses = count_writes + count_reads; */
-   /* long int tlb_misses     = total_accesses - count_tlbhits; */
-
-   return 0;
+   return result;
 }

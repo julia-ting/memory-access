@@ -19,6 +19,31 @@ pfn_t get_free_frame(void) {
       if (rlt[i].pcb == NULL)
          return i;
 
+   for (i = 0; i < CPU_NUM_PTE; i++) {
+      if (current_pagetable[i].valid == 0) {
+          current_pagetable[i].used = 1;
+          current_pagetable[i].valid = 1;
+        // do i mark it as valid?
+          return i;
+      }
+   }
+   for (i = 0; i < CPU_NUM_PTE; i++) {
+      if (current_pagetable[i].used) {
+          current_pagetable[i].used = 0;
+      } else {
+          current_pagetable[i].used = 1;
+          return i;
+      }
+   }
+   for (i = 0; i < CPU_NUM_PTE; i++) {
+       if (!(current_pagetable[i].used)) {
+           current_pagetable[i].used = 1;
+           return i;
+       } else {
+           current_pagetable[i].used = 0;
+       }
+   }
+      
    /* FIX ME : Problem 5 */
    /* IMPLEMENT A CLOCK SWEEP ALGORITHM HERE */
 
