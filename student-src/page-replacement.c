@@ -15,32 +15,34 @@ pfn_t get_free_frame(void) {
    int i;
 
    /* See if there are any free frames */
-   for (i = 0; i < CPU_NUM_FRAMES; i++)
+   for (i = 0; i < CPU_NUM_FRAMES; i++) {
       if (rlt[i].pcb == NULL)
          return i;
+   }
 
-   for (i = 0; i < CPU_NUM_PTE; i++) {
-      if (current_pagetable[i].valid == 0) {
-          current_pagetable[i].used = 1;
-          current_pagetable[i].valid = 1;
-        // do i mark it as valid?
+   pte_t *curr_pagetable;
+   vpn_t curr_vpn;
+   /*  See if there are any invalid frames  */
+   for (i = 0; i < CPU_NUM_FRAMES; i++) {
+      curr_pagetable = rlt[i].pcb->pagetable; 
+      curr_vpn = rlt[i].vpn;
+      if (curr_pagetable[curr_vpn].valid == 0) {
           return i;
       }
    }
-   for (i = 0; i < CPU_NUM_PTE; i++) {
-      if (current_pagetable[i].used) {
-          current_pagetable[i].used = 0;
-      } else {
-          current_pagetable[i].used = 1;
-          return i;
-      }
-   }
-   for (i = 0; i < CPU_NUM_PTE; i++) {
-       if (!(current_pagetable[i].used)) {
-           current_pagetable[i].used = 1;
-           return i;
-       } else {
-           current_pagetable[i].used = 0;
+
+   /* Clock sweep */
+   int round;
+   for (round = 0; round < 2; round++) {
+       for (i = 0; i < CPU_NUM_FRAMES; i++) {
+          curr_pagetable = rlt[i].pcb->pagetable;
+          curr_vpn = rlt[i].vpn;
+          if (curr_pagetable[curr_vpn].used) {
+              curr_pagetable[curr_vpn].used = 0;
+          } else {
+              current_pagetable[i].used = 1;
+              return i;
+          }
        }
    }
       

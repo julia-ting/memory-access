@@ -25,11 +25,14 @@ pfn_t tlb_lookup(vpn_t vpn, int write) {
     * it was a hit!
     */
    int i;
+   // Entry to use 
+   int use_entry = -1;
    for (i = 0; i < tlb_size; i++) {
-       if (tlb[i].vpn == vpn) {
+       if (tlb[i].vpn == NULL && use_entry == -1 || (tlb[i].valid == 0)) {
+           use_entry = i;
+       } else if ((tlb[i].valid == 1) && (tlb[i].vpn == vpn)) {
            count_tlbhits++;
            tlb[i].used = 1;
-           tlb[i].valid = 1;
            current_pagetable[vpn].used = 1;
            current_pagetable[vpn].valid = 1;
            if (write) {
@@ -39,48 +42,33 @@ pfn_t tlb_lookup(vpn_t vpn, int write) {
            return tlb[i].pfn;
        }
    }
-    
+
    /* If it does not exist (it was not a hit), call the page table reader */
    pfn = pagetable_lookup(vpn, write);
-
    /* Checks for invalid entries */
-   for (i = 0; i < tlb_size; i++) {
-       if (tlb[i].valid == 0) {
-           tlb[i].valid = 1;
-           tlb[i].used = 1;
-           tlb[i].vpn = vpn;
-           tlb[i].pfn = pfn;
-           current_pagetable[vpn].valid = 1;
-           current_pagetable[vpn].used = 1;
-           if (write) {
-              tlb[i].dirty = 1;
-              current_pagetable[vpn].dirty = 1;
+
+   int round;
+   if (use_entry == -1) {
+       for (round = 0; round < 2; round++) {
+           for (i = 0; i < tlb_size; i++) {
+               if (tlb[i].used) {
+                   tlb[i].used = 0;
+               } else {
+                   use_entry = i;
+                   round = 2;
+                   break;
+               }
            }
-           return pfn;
        }
    }
-   
-   /* Start clock sweep */
-   int round;
-   for (round = 0; round < 2; round++) {
-       for (i = 0; i < tlb_size; i++) {
-           if (tlb[i].used == 0) {
-               tlb[i].valid = 1;
-               tlb[i].used = 1;
-               tlb[i].vpn = vpn;
-               tlb[i].pfn = pfn;
-               current_pagetable[vpn].valid = 1;
-               current_pagetable[vpn].used = 1;
-               if (write) {
-                  tlb[i].dirty = 1;
-                  current_pagetable[vpn].dirty = 1;
-               }
-               return tlb[i].pfn;
-           } else {
-               tlb[i].used = 0;
-               current_pagetable[vpn].used = 0;
-           }
-       }
+   tlb[use_entry].valid = 1;
+   tlb[use_entry].used = 1;
+   tlb[use_entry].pfn = pfn;
+   tlb[use_entry].vpn = vpn;
+   current_pagetable[vpn].used = 1;
+   if (write) {
+       tlb[use_entry].dirty = 1;
+       current_pagetable[vpn].dirty = 1;
    }
    /* 
     * Replace an entry in the TLB if we missed. Pick invalid entries first,

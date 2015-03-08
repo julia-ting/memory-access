@@ -213,7 +213,7 @@ void sim_readdata(void) {
         proc_switch(pid);
       }
       mem_store(addr, val);
-      printf("Complete\n\n");
+      printf("Complete\n \n ");
 
     /* Ignore other commands (for comments and the like */
     default:

@@ -42,21 +42,34 @@ pfn_t pagefault_handler(vpn_t request_vpn, int write) {
    * 2) Invalidate the page's entry in the victim's page table.
    * 3) Clear the victim page's TLB entry (hint: tlb_clearone()).
    */
-  current_pagetable = victim_pcb->pagetable;
-  if (current_pagetable[victim_vpn].dirty) {
-      page_to_disk(victim_pfn, victim_vpn, victim_pcb->pid);
+
+  /* Checking for occupied victim page */
+  if (victim_pcb != NULL) {
+      current_pagetable = victim_pcb->pagetable;
+      if (current_pagetable[victim_vpn].dirty) {
+          page_to_disk(victim_pfn, victim_vpn, victim_pcb->pid);
+      }
+      current_pagetable[victim_vpn].valid = 0;
+      tlb_clearone(victim_vpn);
+      printf("****PAGE FAULT has occurred at VPN %u. Evicting (PFN %u VPN %u) as victim.\n", request_vpn,
+          victim_pfn, victim_vpn);
   }
-  current_pagetable[victim_pfn].valid = 0;
-  tlb_clearone(victim_vpn);
-  printf("****PAGE FAULT has occurred at VPN %u. Evicting (PFN %u VPN %u) as victim.\n", request_vpn,
-      victim_pfn, victim_vpn);
 
   /* Update the reverse lookup table so that 
      it knows about the requesting process  */
-  /* FIX ME */
+  
+  /* Update RLT about requesting process */
+  rlt[victim_pfn].vpn = request_vpn;
+  rlt[victim_pfn].pcb = current;
 
   /* Update the requesting process' page table */
-  /* FIX ME */
+  current_pagetable = current->pagetable;
+  current_pagetable[request_vpn].valid = 1;
+  current_pagetable[request_vpn].used = 1;
+  current_pagetable[request_vpn].pfn = victim_pfn;
+  if (write) {
+      current_pagetable[request_vpn].dirty = 1;
+  }
 
   /*
    * Retreive the page from disk. Note that is really a lie: we save pages in

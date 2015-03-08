@@ -1,6 +1,7 @@
 #include "swapfile.h"
 #include "statistics.h"
 #include "pagetable.h"
+#include <stdio.h>
 
 /*******************************************************************************
  * Looks up an address in the current page table. If the entry for the given
@@ -11,12 +12,12 @@
  * @return The physical frame number of the page we are accessing.
  */
 pfn_t pagetable_lookup(vpn_t vpn, int write) {
-   
      /* CHANGE ME */
     pfn_t pfn = current_pagetable[vpn].pfn;
+
     if (!(current_pagetable[vpn].valid)) {
         count_pagefaults++;
-        pagefault_handler(vpn, write);
+        return pagefault_handler(vpn, write);
     } 
     /* FIX ME - Part 2 
      * Determine the PFN corresponding to the passed in VPN.
