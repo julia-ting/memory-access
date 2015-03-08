@@ -4,6 +4,7 @@
 
 # NOTE: You should NOT have to modify this file. Break at your own risk!
 
+# Julia Ting project 3
 # these are the two directories where source code can be located
 STUDENT   = student-src
 SIMULATOR = simulator-src
